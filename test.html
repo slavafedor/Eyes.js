@@ -1,0 +1,196 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+  	<meta name="viewport" content="width=device-width" >
+  	<title>JS Bin</title>
+		<script src="./src/eye.js" ></script>
+		<script src="./src/eyeBrow.js" ></script>
+		
+	</head>
+	<body>
+		<div style="width: 100%;">
+			<canvas id="canvas" style="display: table; margin: 0 auto;background-color:white;border: solid 1px black; " width="640" height="480"></canvas>
+			<div style="width:640px; display: table; margin: 0 auto;">
+				<div style="display: table-row; height: 180px;">
+					<div id="divLeft" style="width: 49%; display: table-cell;">
+						<span >Left Eye Brow</span>
+						<label for="leftTopOffset">Mid Point </label>
+						<input type="range" min="-1" max="1" step="0.1" id="leftTopOffset" value="0" 
+							onchange="synchronizeValue(this.value, rightTopOffset, rightTopOffset, true);"
+						>
+						<br>	
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="leftLeftYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, rightLeftYOffset, rightRightYOffset);">
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="leftCenterYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, rightCenterYOffset, rightCenterYOffset);">
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="leftRightYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, rightRightYOffset, rightLeftYOffset);">
+					</div>
+					<div id="divRight" style="width: 49%;  display: table-cell;">
+						<span >Right Eye Brow</span>
+						<label for="rightTopOffset">Mid Point </label>
+						<input type="range" min="-1" max="1" step="0.1" id="rightTopOffset" value="0" 
+							onchange="synchronizeValue(this.value, leftTopOffset, leftTopOffset, true);">
+						<br>	
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="rightLeftYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, leftLeftYOffset, leftRightYOffset);">
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="rightCenterYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, leftCenterYOffset, leftCenterYOffset);">
+						<input type="range" min="-0.5" max="0.25" step="0.05" id="rightRightYOffset" value="0" style="transform: rotate(270deg);margin-top:70px; width:80px;"
+							onchange="synchronizeValue(this.value, leftRightYOffset, leftLeftYOffset);">
+					</div>
+				</div>
+				<div style="display: table-row; width: 640px;">
+					<div style="width: 50%; display: table-cell;">
+						<label for="synchronize">Synchronize left and right</label>
+						<input type="checkbox" id="synchronize" checked="checked">
+							
+						<label for="symmetrical" style="margin-left:20px;">Symmetrical </label>
+						<input type="checkbox" id="symmetrical" checked="checked">
+					</div>
+					<div style="width: 50%; display: table-cell;">
+						<button onclick="reset();" style="display: block; margin-left:20px;">Reset</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script>
+			function reset()
+			{
+				synchronize.checked = true;
+				symmetrical.checked = true;
+				
+				leftTopOffset.value = 0;
+				leftLeftYOffset.value = 0;
+				leftCenterYOffset.value = 0;
+				leftRightYOffset.value = 0;
+
+				rightTopOffset.value = 0;
+				rightLeftYOffset.value = 0;
+				rightCenterYOffset.value = 0;
+				rightRightYOffset.value = 0; 
+			}
+
+			function synchronizeValue( value, to, symTo, symChangeSign = false)
+			{
+				if(synchronize.checked)
+				{
+					if(symmetrical.checked)
+					{
+						symTo.value = (symChangeSign) ? -value: value;
+					} else { 
+					 to.value = value;
+					}
+				}
+			}
+		</script>
+	
+
+		<script >
+			var canvas = document.getElementById('canvas');
+			var ctx = canvas.getContext('2d'); 
+			var imageObj = new Image();
+			imageObj.onload = function() {
+        ctx.drawImage(imageObj, 0, 0, 640, 480, 0, 0, canvas.width, canvas.height);
+      };
+
+			imageObj.src = "assets/bg.png";
+
+			var g = 0.1; // "gravity"
+			var mousePos = {x:0, y:0};
+			var mouseMessage = "";
+
+			var radius = 60;
+			var color = "#3333cc";
+			var eyes = {
+				left : new Eye(ctx, 160, 240, radius, color), 
+				right : new Eye(ctx, 480, 240, radius, color)
+			}; 
+			var eyeBrows = {
+				left : new EyeBrow(ctx, 160, 110, "black", 200, 15, 0), 
+				right : new EyeBrow(ctx, 480, 110, "black", 200, 15, 0)};
+			var mousePointer = {x: 0, y: 0};
+
+			var frames = 0;
+
+			function onEachStep() {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);          
+				
+				mousePointer.x = mousePos.x;
+				mousePointer.y = mousePos.y;
+				eyes.left.updatePosition(mousePos);
+				eyes.right.updatePosition(mousePos);
+
+				eyes.left.draw(); 
+				eyes.right.draw();
+        ctx.drawImage(imageObj, 0, 0, 640, 480, 0, 0, canvas.width, canvas.height);
+
+				eyeBrows.left.draw(
+					-eyeBrows.left.halfLength * leftLeftYOffset.value,
+					-eyeBrows.left.halfLength * leftCenterYOffset.value, 
+					-eyeBrows.left.halfLength * leftRightYOffset.value,  
+					eyeBrows.left.halfLength * leftTopOffset.value);
+
+				eyeBrows.right.draw(
+					-eyeBrows.right.halfLength * rightLeftYOffset.value, 
+					-eyeBrows.right.halfLength * rightCenterYOffset.value, 
+					-eyeBrows.right.halfLength * rightRightYOffset.value,  
+					eyeBrows.right.halfLength * rightTopOffset.value);
+				
+				drawCursor(mousePointer);
+        
+				writeMessage(canvas, mouseMessage);
+				frames++;
+				
+				window.requestAnimFrame(onEachStep, canvas);
+			}; 
+
+
+			function drawCursor(pos) {     
+				ctx.beginPath();
+      	ctx.rect(pos.x - 3, pos.y - 3, 6, 6);
+				ctx.closePath();
+				ctx.fillStyle = 'red';
+				ctx.fill();
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = 'black';
+				ctx.stroke();
+			}
+
+ 			function writeMessage(canvas, message) {
+        //ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '18pt Calibri';
+        ctx.fillStyle = 'black';
+        ctx.fillText(message, 10, 25);
+      }
+
+      function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: Math.floor(evt.clientX - rect.left),
+					y: Math.floor(evt.clientY - rect.top),
+					sX: evt.clientX,
+					sY: evt.clientY
+        };
+      }
+
+      //canvas.addEventListener('mousemove', function(evt) {
+			window.addEventListener('mousemove', function(evt) {
+        mousePos = getMousePos(canvas, evt);
+        mouseMessage = 'Mouse position: ' + mousePos.sX + ', ' + mousePos.sY;
+      }, false);
+
+			window.requestAnimFrame=function(){
+				return window.requestAnimationFrame 
+				|| window.webkitRequestAnimationFrame
+				|| window.mozRequestAnimationFrame
+				|| window.oRequestAnimationFrame
+				|| window.msRequestAnimationFrame
+				|| function(a){window.setTimeout(a,1E3/60)}}();
+
+			onEachStep(); 
+
+		</script>
+	</body>
+</html>
